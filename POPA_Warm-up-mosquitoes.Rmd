@@ -1,0 +1,195 @@
+---
+title: "Warm-up mini-Report: Mosquito Blood Hosts in \n Salt Lake City, Utah"
+author: "Michael Popa II"
+date: "`r Sys.Date()`"
+output:
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# ABSTRACT
+
+West Nile Virus (WNV) is a mosquito-borne virus that is transmitted via avian hosts, with collateral infection into humans and other mammals. For purposes of mitigating WNV spread, identifying avian species that act as amplifying hosts is necessary. We investigated if House Finches (Haemorhous mexicanus) are important amplifiers of WNV in Salt Lake City, Utah by examining the relationship between blood meal host identity and WNV presence in local mosquito populations. Mosquitoes were collected by the Salt Lake Mosquito Abatement District and then processed by us for blood meal analysis via polymerase chain reaction (PCR) and sequencing of mitochondrial DNA. This DNA was used to identify specific avian host species. Statistical analyses and models were used to test whether House Finch blood meals predicted WNV presence and infection rates across different sites. House Finches were the most frequent blood meal source across both WNV-negative and WNV-positive sites, and sites where mosquitoes fed on House Finches were significantly more likely to test positive for WNV (p = 0.0287), and had significantly higher WNV positivity rates (p < 0.0001). Our findings suggested that House Finches play a key role in amplifying WNV in the Salt Lake City region. Going forward, the Salt Lake Mosquito Abatement District can incorporate blood meal analysis into their mosquito surveillance to help identify avian species that disproportionately contribute to virus transmission and inform their control strategies.
+
+# BACKGROUND
+
+West Nile Virus is a mosquito-borne virus that has become a significant public health concern since its discovery nearly 30 years ago. Transmission primarily occurs between avian hosts and mosquito vectors, but humans and other mammals can become collateral hosts (Komar et al., 2003). Understanding the feeding patterns and host preferences of these mosquitos is essential to understanding WNV transmission dynamics and identifying potential risk factors for human infection.
+To investigate these behaviors, mosquito blood meals can be analyzed to determine the species of the host the mosquito fed on. Blood meal analysis begins with the extraction of DNA from the mosquito’s contents. Proper DNA extraction is essential to ensure reliable molecular study. Following extraction, PCR is used to amplify host-specific genetic markers, often targeting conserved regions like mitochondrial DNA. PCR amplification allows for the detection of even small quantities of host DNA present in the blood meal.
+Sequencing of PCR products provides species-level identification of the blood meal source. Together, these methods form the foundation for assessing vector-host interactions and evaluating their role in WNV transmission. When we exercise these tools, we can see how long after infection viremia is detectable across different avian species local to the Salt Lake City area. Understanding viremia loads across avian populations sponsors questions about WNV and Salt Lake City avian populations.
+
+```{r viremia, include=TRUE, eval=TRUE, warning=FALSE, fig.align='left', fig.width=4.75, fig.height=7}
+# Manually transcribe duration (mean, lo, hi) from the last table column
+duration <- data.frame(
+  Bird = c("Canada Goose","Mallard", 
+           "American Kestrel","Northern Bobwhite",
+           "Japanese Quail","Ring-necked Pheasant",
+           "American Coot","Killdeer",
+           "Ring-billed Gull","Mourning Dove",
+           "Rock Dove","Monk Parakeet",
+           "Budgerigar","Great Horned Owl",
+           "Northern Flicker","Blue Jay",
+           "Black-billed Magpie","American Crow",
+           "Fish Crow","American Robin",
+           "European Starling","Red-winged Blackbird",
+           "Common Grackle","House Finch","House Sparrow"),
+  mean = c(4.0,4.0,4.5,4.0,1.3,3.7,4.0,4.5,5.5,3.7,3.2,2.7,1.7,6.0,4.0,
+           4.0,5.0,3.8,5.0,4.5,3.2,3.0,3.3,6.0,4.5),
+  lo   = c(3,4,4,3,0,3,4,4,4,3,3,1,0,6,3,
+           3,5,3,4,4,3,3,3,5,2),
+  hi   = c(5,4,5,5,4,4,4,5,7,4,4,4,4,6,5,
+           5,5,5,7,5,4,3,4,7,6)
+)
+
+# Choose some colors
+cols <- c(rainbow(30)[c(10:29,1:5)])  # rainbow colors
+
+# horizontal barplot
+par(mar=c(5,12,2,2))  # wider left margin for names
+bp <- barplot(duration$mean, horiz=TRUE, names.arg=duration$Bird,
+              las=1, col=cols, xlab="Days of detectable viremia", xlim=c(0,7))
+
+# add error bars
+arrows(duration$lo, bp, duration$hi, bp,
+       angle=90, code=3, length=0.05, col="black", xpd=TRUE)
+```
+
+# STUDY QUESTION and HYPOTHESIS
+
+## Questions  
+What bird species is acting as WNV amplifying host in Salt Lake City?
+
+## Hypothesis 
+House finches are acting as important amplifying hosts of WNV in Salt Lake City.
+  
+## Prediction
+If house finches are acting as important amplifying hosts, we predict that trapping locations where mosquitoes feed on house finches will also have higher rates of confirmed WNV in tested mosquito pools.
+
+# METHODS
+
+Professor Saarman laid the foundation for us to conduct this analysis. Because of her partnership with the Salt Lake Mosquito Abatement District, we were provided mosquitos to source blood meal samples from. From these samples, we conducted a PCR. We first combined the DNA sample with the reagents needed to complete PCR, including template DNA, primers, buffer, DNA polymerase, dNTPs, and water. Template DNA is the DNA sample we are trying to amplify through PCR. Primers are the initiators of DNA sequencing; they prepare the DNA strand for replication and signal to other associated proteins where to bind to to initiate DNA replication. DNA polymerase is the protein that binds at the replication site and attaches the necessary nucleotides to the template DNA strand. Next, the sample solution and control (the solution without any active DNA in it to ensure no contamination occurred and that the PCR is conducted as it should be) were pipetted into a PCR tray and then the tray was placed into the thermocycler. The sample underwent 4 steps multiple times (cycles): denaturation (melting of DNA into single strands), annealing (binding of primers to DNA strands), extension (synthesis of DNA strand compliment by DNA polymerase), and finally a hold (preserves reaction until removed from the thermocycler). Each cycle roughly doubles the quantity of DNA but we needed to conduct this several times to get the desired quantity we needed for analysis. After sequencing our genetic material, the genetic information was transferred to a digital format for coding analysis via R.
+
+# ANALYSIS
+With our data, we tested whether the presence or number of house finch blood meals predicts WNV occurrence at a site using two meausres of outcome. First, we tested whether a site had WNV-positive mosquito pools (qualitative/binary). Next, we tested the WNV positivity rate at a site (quantitative/numeric). We used these analyses to see if the patterns in the barplots were statistically supported and determined whether sites with house finch blood meals were more likely to have WNV-positive pools or higher WNV positivity rates.
+```{r first-analysis, warning=FALSE}
+## import counts_matrix: data.frame with column 'loc_positives' (0/1) and host columns 'host_*'
+counts_matrix <- read.csv("./bloodmeal_plusWNV_for_BIOL3070.csv")
+
+## 1) Identify host columns
+host_cols <- grep("^host_", names(counts_matrix), value = TRUE)
+
+if (length(host_cols) == 0) {
+  stop("No columns matching '^host_' were found in counts_matrix.")
+}
+
+## 2) Ensure loc_positives is present and has both levels 0 and 1 where possible
+counts_matrix$loc_positives <- factor(counts_matrix$loc_positives, levels = c(0, 1))
+
+## 3) Aggregate host counts by loc_positives
+agg <- stats::aggregate(
+  counts_matrix[, host_cols, drop = FALSE],
+  by = list(loc_positives = counts_matrix$loc_positives),
+  FUN = function(x) sum(as.numeric(x), na.rm = TRUE)
+)
+
+## make sure both rows exist; if one is missing, add a zero row
+need_levels <- setdiff(levels(counts_matrix$loc_positives), as.character(agg$loc_positives))
+if (length(need_levels)) {
+  zero_row <- as.list(rep(0, length(host_cols)))
+  names(zero_row) <- host_cols
+  for (lv in need_levels) {
+    agg <- rbind(agg, c(lv, zero_row))
+  }
+  ## restore proper type
+  agg$loc_positives <- factor(agg$loc_positives, levels = c("0","1"))
+  ## coerce numeric host cols (they may have become character after rbind)
+  for (hc in host_cols) agg[[hc]] <- as.numeric(agg[[hc]])
+  agg <- agg[order(agg$loc_positives), , drop = FALSE]
+}
+
+## 4) Decide species order (overall abundance, descending)
+overall <- colSums(agg[, host_cols, drop = FALSE], na.rm = TRUE)
+host_order <- names(sort(overall, decreasing = TRUE))
+species_labels <- rev(sub("^host_", "", host_order))  # nicer labels
+
+## 5) Build count vectors for each panel in the SAME order
+counts0 <- rev(as.numeric(agg[agg$loc_positives == 0, host_order, drop = TRUE]))
+counts1 <- rev(as.numeric(agg[agg$loc_positives == 1, host_order, drop = TRUE]))
+
+## 6) Colors: reuse your existing 'cols' if it exists and is long enough; otherwise generate
+if (exists("cols") && length(cols) >= length(host_order)) {
+  species_colors <- setNames(cols[seq_along(host_order)], species_labels)
+} else {
+  species_colors <- setNames(rainbow(length(host_order) + 10)[seq_along(host_order)], species_labels)
+}
+
+## 7) Shared x-limit for comparability
+xmax <- max(c(counts0, counts1), na.rm = TRUE)
+xmax <- if (is.finite(xmax)) xmax else 1
+xlim_use <- c(0, xmax * 1.08)
+
+## 8) Plot: two horizontal barplots with identical order and colors
+op <- par(mfrow = c(1, 2),
+          mar = c(4, 12, 3, 2),  # big left margin for species names
+          xaxs = "i")           # a bit tighter axis padding
+
+## Panel A: No WNV detected (loc_positives = 0)
+barplot(height = counts0,
+        names.arg = species_labels, 
+        cex.names = .5,
+        cex.axis = .5,
+        col = rev(unname(species_colors[species_labels])),
+        horiz = TRUE,
+        las = 1,
+        xlab = "Bloodmeal counts",
+        main = "WNV (-)",
+        xlim = xlim_use)
+
+## Panel B: WNV detected (loc_positives = 1)
+barplot(height = counts1,
+        names.arg = species_labels, 
+        cex.names = .5,
+        cex.axis = .5,
+        col = rev(unname(species_colors[species_labels])),
+        horiz = TRUE,
+        las = 1,
+        xlab = "Bloodmeal counts",
+        main = "WNV (+)",
+        xlim = xlim_use)
+
+par(op)
+
+## Keep the colors mapping for reuse elsewhere
+host_species_colors <- species_colors
+```
+
+```{r}
+# second-analysis-or-plot, glm with house finch alone against binary +/_
+glm1 <- glm(loc_positives ~ host_House_finch,
+            data = counts_matrix,
+            family = binomial)
+summary(glm1)
+
+#glm with house-finch alone against positivity rate
+glm2 <- glm(loc_rate ~ host_House_finch,
+            data = counts_matrix)
+summary(glm2)
+```
+
+# DISCUSSION
+From our analyses, we have evidence that the presence of House Finch blood meals is significantly associated with WNV activity at the sampled sites. Visual inspection of bloodmeal count distributions revealed that House Finches were the most frequent host in both WNV-negative and WNV-positive mosquito groups. The statistical analyses further demonstrate a clear, quantitative evaluation of this finding. Using a linear model, we found that the number of House Finch blood meals significantly predicted the presence or absence of WNV-positive mosquito groups at the sampled sites (p = 0.0287). From this, we can see that sites where sampled mosquitoes had fed on House Finches were more likely to contain WNV-positive mosquito populations, which matches our hypothesis that House Finches may play a role in the local amplification of WNV. In our second statistical model using WNV positivity rate as a continuous outcome, the relationship between House Finch blood meals and WNV activity was even stronger (p = 4.54e-5), indicates that not only are House Finch blood meals associated with WNV presence but the degree of WNV activity also increases with House Finch feeding. Our findings provide evidence for an ecological role for the House Finch in Salt Lake City area WNV transmission patterns. Our results are consistent with prior studies suggesting that certain bird species may act as amplification hosts for WNV, although our evidence is corellary rather than causative. The strong associations observed by our statistical analyses highlights a need for further experimental studies to determine host competence and the means that link mosquito host selection to virus transmission. While several other avian species such as House Sparrows and American Robins were also commonly detected in blood meals, their individual representation in WNV activity was not tested in this analysis. Further studies to include additional host species and ecological variables could help us better understand community-level variables of WNV transmission. Overall, our findings show that House Finch blood meal presence is a statistically significant predictor of WNV occurrence and severity across sites, leading to a potential means for risk assessment and surveillance efforts for the Salt Lake Mosquito Abatement District.
+
+# CONCLUSION
+Our study provides evidence that House Finches may serve as important amplifying hosts of West Nile Virus in the Salt Lake City area. Through molecular identification of mosquito blood meals and site-specific WNV testing, we found that the presence of House Finch blood meals significantly predicted both the presence of WNV-positive mosquito pools and increased WNV positivity rates. Our findings support our hypothesis and suggest a strong ecological link between House Finch hosts and local WNV transmission, although causation was not able to be assessed in this observational study. Our work emphasizes the importance of integrating blood meal analysis with surveillance efforts to identify key avian species that may contribute to local WNV amplification. Future studies incorporating broader ecological variables and additional host species will be essential to further identify interactions and their implications for the Salt Lake Mosquito Abatement District.
+
+# REFERENCES     
+
+1. Komar N, Langevin S, Hinten S, Nemeth N, Edwards E, Hettler D, Davis B, Bowen R, Bunning M. Experimental infection of North American birds with the New York 1999 strain of West Nile virus. Emerg Infect Dis. 2003 Mar;9(3):311-22. https://doi.org/10.3201/eid0903.020628
+
+2. ChatGPT. OpenAI, version Jan 2025. Used as a reference for functions, graphing, and to correct syntax errors. Accessed `r Sys.Date()`.
+
+
+
+
