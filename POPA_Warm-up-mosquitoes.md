@@ -1,7 +1,7 @@
 Warm-up mini-Report: Mosquito Blood Hosts in Salt Lake City, Utah
 ================
 Michael Popa II
-2025-10-09
+2025-10-10
 
 - [ABSTRACT](#abstract)
 - [BACKGROUND](#background)
@@ -149,13 +149,18 @@ transferred to a digital format for coding analysis via R.
 # ANALYSIS
 
 With our data, we tested whether the presence or number of house finch
-blood meals predicts WNV occurrence at a site using two meausres of
+blood meals predicts WNV occurrence at a site using two measures of
 outcome. First, we tested whether a site had WNV-positive mosquito pools
-(qualitative/binary). Next, we tested the WNV positivity rate at a site
-(quantitative/numeric). We used these analyses to see if the patterns in
-the barplots were statistically supported and determined whether sites
-with house finch blood meals were more likely to have WNV-positive pools
-or higher WNV positivity rates.
+(qualitative/binary). To do this, we used a logistic regression model to
+assess whether the presence of house finch blood meals increased the
+likelihood of detecting any WNV-positive pools at a site. Next, we
+tested the WNV positivity rate at a site (quantitative/numeric). For
+this, we applied a linear regression model to evaluate whether the
+proportion of WNV-positive mosquito pools was positively correlated with
+the number or proportion of house finch blood meals. We used these
+analyses to see if the patterns in the barplots were statistically
+supported and determined whether sites with house finch blood meals were
+more likely to have WNV-positive pools or higher WNV positivity rates.
 
 ``` r
 ## import counts_matrix: data.frame with column 'loc_positives' (0/1) and host columns 'host_*'
@@ -337,13 +342,20 @@ host competence and the means that link mosquito host selection to virus
 transmission. While several other avian species such as House Sparrows
 and American Robins were also commonly detected in blood meals, their
 individual representation in WNV activity was not tested in this
-analysis. Further studies to include additional host species and
-ecological variables could help us better understand community-level
-variables of WNV transmission. Overall, our findings show that House
-Finch blood meal presence is a statistically significant predictor of
-WNV occurrence and severity across sites, leading to a potential means
-for risk assessment and surveillance efforts for the Salt Lake Mosquito
-Abatement District.
+analysis. Other limitations of this observational experiment include the
+tight locality for which mosquito transmission was assessed. Outside of
+the Salt Lake City region, we cannot impose any of our conclusions from
+the sample. We also only have a single sampling event. Further, repeated
+observational experiments would need to be done to truly assess whether
+these findings were truly random or not. Our greatest limitation is that
+this study proved a correlation between avian species and WNV
+transmission, but there is no causative link here. Further studies to
+include additional host species and ecological variables could help us
+better understand community-level variables of WNV transmission.
+Overall, our findings show that House Finch blood meal presence is a
+statistically significant predictor of WNV occurrence and severity
+across sites, leading to a potential means for risk assessment and
+surveillance efforts for the Salt Lake Mosquito Abatement District.
 
 # CONCLUSION
 
@@ -371,4 +383,4 @@ implications for the Salt Lake Mosquito Abatement District.
 
 2.  ChatGPT. OpenAI, version Jan 2025. Used as a reference for
     functions, graphing, and to correct syntax errors. Accessed
-    2025-10-09.
+    2025-10-10.
