@@ -17,11 +17,9 @@ Opioid pain relief isn’t the same for every cancer patient, and genetics likel
 
 # BACKGROUND
 Pain control on opioids varies widely, even at similar doses. Clinical factors explain some of it, but prior EPOS work points to a genetic component, including a variant near RHBDF2 (rs12948783). I don’t have patient-level outcomes or doses; I do have the study’s Table 2 (term enrichment) and Table 3 (top SNPs). So I’m first visualizing what’s available to ground the story: do bigger gene sets show stronger enrichment, and where does rs12948783 fall among the top SNP signals? This keeps the genetics focus clear while I stage the planned patient-level model for later.
-```{r fig1_multireg, eval=FALSE}
+```{r fig1_multireg, eval=TRUE}
 # your plotting / model code here
-```
 
-```
 ## ---- fig_reg_table2, eval=TRUE, message=FALSE, warning=FALSE---------------
 # If needed once in Console: install.packages(c("readxl","dplyr","ggplot2","readr","stringr"))
 
@@ -31,8 +29,7 @@ library(ggplot2)
 library(readr)
 library(stringr)
 
-excel_path <- "/cloud/project/BIOL 3070 Final Project DATA POOL.xlsx"
-stopifnot(file.exists(excel_path))
+excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
 
 # Read exactly "Table 2"
 raw_t2 <- read_excel(excel_path, sheet = "Table 2", .name_repair = "minimal")
@@ -104,10 +101,8 @@ I expect a positive relationship in the summary enrichment data: terms with more
 I imported the EPOS Excel workbook and worked directly from the summary tables available. From Table 2, I ran a simple linear regression of −log10(p) on gene count and plotted a scatter with an OLS line and 95% CI. From Table 3, I plotted −log10(p) versus position (Mb) within each chromosome and highlighted rs12948783; I cleaned headers, dropped the note row, and used sparse x-axis ticks so labels are readable. Because I don’t have patient-level rows (pain relief, dose, genotype, country, gender), I also included a draft multiple-regression code block—pain_relief ~ dose * genotype + country + gender—marked eval=FALSE as the planned analysis if individual-level data become available. All code is in the .Rmd using tidyverse/ggplot2.
 
 ## Fill in 1st analysis
-
-```
+```{r}
 ## ---- fig_table3_clean_ticks, eval=TRUE, message=FALSE, warning=FALSE-------
-# Requires: readxl, dplyr, ggplot2, readr, stringr, scales
 library(readxl)
 library(dplyr)
 library(ggplot2)
@@ -115,26 +110,20 @@ library(readr)
 library(stringr)
 library(scales)
 
-excel_path <- "/cloud/project/BIOL 3070 Final Project DATA POOL.xlsx"
+excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
 stopifnot(file.exists(excel_path))
 
-# Read (unique names); your sheet has an extra note row we drop below
+# Read your SNP sheet
 t3_raw <- read_excel(excel_path, sheet = "Table 3.0", .name_repair = "unique")
 
-# Column names used in your file
-chr_col <- "Chromosome"
-pos_col <- "Position (Mb)"
-p_col   <- "First and second combined series"
-snp_col <- "SNP"
-
-# Drop the note row and parse numerics robustly
 t3 <- t3_raw %>%
-  filter(!(is.na(.data[[chr_col]]) & is.na(.data[[pos_col]]))) %>%        # remove header/note line
+  filter(!(is.na(.data[["Chromosome"]]) & is.na(.data[["Position_Mb"]]))) %>%
   transmute(
-    chr_raw = as.character(.data[[chr_col]]),
-    pos_txt = as.character(.data[[pos_col]]),
-    p_txt   = as.character(.data[[p_col]]),
-    snp     = as.character(.data[[snp_col]])
+    chr_raw = as.character(`Chromosome`),
+    pos_txt = as.character(`Position_Mb`),
+    p1_txt  = as.character(`First series`),
+    p2_txt  = as.character(`Second series`),
+    snp     = as.character(`SNP`)
   ) %>%
   mutate(
     chr = case_when(
@@ -142,22 +131,21 @@ t3 <- t3_raw %>%
       str_to_lower(chr_raw) == "y" ~ 24,
       TRUE ~ parse_number(chr_raw)
     ),
-    pos_mb     = parse_number(str_replace_all(pos_txt, ",", ".")),
-    p_val      = parse_number(str_replace_all(p_txt,  ",", ".")),
-    neglog10p  = -log10(p_val),
-    highlight  = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
+    pos_mb = parse_number(str_replace_all(pos_txt, ",", ".")),
+    p1 = parse_number(str_replace_all(p1_txt, ",", ".")),
+    p2 = parse_number(str_replace_all(p2_txt, ",", ".")),
+    p_val = pmin(p1, p2, na.rm = TRUE),   # combine by smallest p-value
+    neglog10p = -log10(p_val),
+    highlight = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
   ) %>%
   filter(is.finite(chr), is.finite(pos_mb), is.finite(neglog10p), p_val > 0)
 
-# Faceted plot with CLEAN Mb ticks on the x-axis
+# Plot by chromosome
 ggplot(t3, aes(pos_mb, neglog10p)) +
   geom_point(aes(color = highlight), alpha = 0.85, size = 1.9) +
   facet_wrap(~ chr, scales = "free_x", ncol = 6) +
   scale_color_manual(values = c("Other" = "grey40", "rs12948783" = "red")) +
-  scale_x_continuous(
-    breaks = pretty_breaks(n = 3),            # ~3 ticks per facet (adjust n to taste)
-    labels = label_number(accuracy = 1)       # clean numeric labels
-  ) +
+  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
   labs(
     title = expression(SNP~associations~by~chromosome~(Table~3)),
     x = "Position (Mb) within chromosome",
@@ -166,11 +154,10 @@ ggplot(t3, aes(pos_mb, neglog10p)) +
   ) +
   theme_minimal() +
   theme(
-    legend.position   = "top",
+    legend.position = "top",
     panel.grid.minor.x = element_blank(),
-    axis.text.x        = element_text(size = 8)
+    axis.text.x = element_text(size = 8)
   )
-
 ```
 
 

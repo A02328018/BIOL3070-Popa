@@ -1,6 +1,6 @@
 Opioid Therapy Response in European Cancer Patients
 ================
-Taze Stegelmeier
+Michael Popa
 2025-10-28
 
 github_document: toc: true —
@@ -34,73 +34,154 @@ patient-level model for later.
 
 ``` r
 # your plotting / model code here
+
+## ---- fig_reg_table2, eval=TRUE, message=FALSE, warning=FALSE---------------
+# If needed once in Console: install.packages(c("readxl","dplyr","ggplot2","readr","stringr"))
+
+library(readxl)
+library(dplyr)
 ```
 
-    ## ---- fig_reg_table2, eval=TRUE, message=FALSE, warning=FALSE---------------
-    # If needed once in Console: install.packages(c("readxl","dplyr","ggplot2","readr","stringr"))
+    ## 
+    ## Attaching package: 'dplyr'
 
-    library(readxl)
-    library(dplyr)
-    library(ggplot2)
-    library(readr)
-    library(stringr)
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
 
-    excel_path <- "/cloud/project/BIOL 3070 Final Project DATA POOL.xlsx"
-    stopifnot(file.exists(excel_path))
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
 
-    # Read exactly "Table 2"
-    raw_t2 <- read_excel(excel_path, sheet = "Table 2", .name_repair = "minimal")
+``` r
+library(ggplot2)
+library(readr)
+library(stringr)
 
-    # Show a quick peek so we can verify the raw text
-    cat("\n-- Raw headers --\n"); print(names(raw_t2))
-    cat("\n-- Sample values in `Gene count` and `Pa` --\n")
-    print(head(raw_t2[c("Gene count","Pa")], 10))
+excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
 
-    # Robust parsing:
-    # - Handle commas as decimal separators
-    # - Strip non-numeric characters (e.g., "<", "p=", spaces)
-    # - Convert to numbers safely
-    t2 <- raw_t2 %>%
-      mutate(
-        gene_count_txt = as.character(`Gene count`),
-        p_txt          = as.character(Pa),
+# Read exactly "Table 2"
+raw_t2 <- read_excel(excel_path, sheet = "Table 2", .name_repair = "minimal")
 
-        # Replace comma decimal with dot, remove spaces
-        gene_count_txt = str_replace_all(gene_count_txt, ",", "."),
-        p_txt          = str_replace_all(p_txt, ",", "."),
+# Show a quick peek so we can verify the raw text
+cat("\n-- Raw headers --\n"); print(names(raw_t2))
+```
 
-        # Extract numbers (keeps scientific notation like 1e-5)
-        gene_count = parse_number(gene_count_txt, locale = locale(decimal_mark = ".")),
-        p_value    = parse_number(p_txt,          locale = locale(decimal_mark = ".")),
+    ## 
+    ## -- Raw headers --
 
-        neglog10p  = -log10(p_value)
-      )
+    ## [1] "Term"       "Gene count" "Pa"         "Genes"
 
-    cat("\nRows before filtering:", nrow(t2), "\n")
-    t2_ok <- t2 %>% filter(is.finite(gene_count), is.finite(neglog10p), p_value > 0)
+``` r
+cat("\n-- Sample values in `Gene count` and `Pa` --\n")
+```
 
-    cat("Rows after numeric parsing/filter:", nrow(t2_ok), "\n")
-    if (nrow(t2_ok) == 0) {
-      stop("\nStill 0 usable rows.\n",
-           "Check that 'Gene count' and 'Pa' really contain numbers (not blanks or text labels).\n",
-           "The prints above show the first few raw values so we can adjust parsing if needed.")
-    }
+    ## 
+    ## -- Sample values in `Gene count` and `Pa` --
 
-    # Linear regression: enrichment strength ~ gene_count
-    m <- lm(neglog10p ~ gene_count, data = t2_ok)
-    cat("\n=== Regression summary: -log10(p) ~ gene_count ===\n")
-    print(summary(m))
+``` r
+print(head(raw_t2[c("Gene count","Pa")], 10))
+```
 
-    # Plot: scatter + regression line + CI
-    ggplot(t2_ok, aes(gene_count, neglog10p)) +
-      geom_point(alpha = 0.7) +
-      geom_smooth(method = "lm", se = TRUE) +
-      labs(
-        title = "Enrichment strength vs. gene count",
-        x = "Gene count in term",
-        y = expression(-log[10](p))
-      ) +
-      theme_minimal()
+    ## # A tibble: 6 × 2
+    ##   `Gene count` Pa         
+    ##   <chr>        <chr>      
+    ## 1 31           3.5 × 10−5 
+    ## 2 17           6.1 × 10−3 
+    ## 3 17           6.2 × 10−3 
+    ## 4 11           6.8 × 10−3 
+    ## 5 10           7.1 × 10−3 
+    ## 6 20           7.4 × 10−3 
+
+``` r
+# Robust parsing:
+# - Handle commas as decimal separators
+# - Strip non-numeric characters (e.g., "<", "p=", spaces)
+# - Convert to numbers safely
+t2 <- raw_t2 %>%
+  mutate(
+    gene_count_txt = as.character(`Gene count`),
+    p_txt          = as.character(Pa),
+
+    # Replace comma decimal with dot, remove spaces
+    gene_count_txt = str_replace_all(gene_count_txt, ",", "."),
+    p_txt          = str_replace_all(p_txt, ",", "."),
+
+    # Extract numbers (keeps scientific notation like 1e-5)
+    gene_count = parse_number(gene_count_txt, locale = locale(decimal_mark = ".")),
+    p_value    = parse_number(p_txt,          locale = locale(decimal_mark = ".")),
+
+    neglog10p  = -log10(p_value)
+  )
+
+cat("\nRows before filtering:", nrow(t2), "\n")
+```
+
+    ## 
+    ## Rows before filtering: 6
+
+``` r
+t2_ok <- t2 %>% filter(is.finite(gene_count), is.finite(neglog10p), p_value > 0)
+
+cat("Rows after numeric parsing/filter:", nrow(t2_ok), "\n")
+```
+
+    ## Rows after numeric parsing/filter: 6
+
+``` r
+if (nrow(t2_ok) == 0) {
+  stop("\nStill 0 usable rows.\n",
+       "Check that 'Gene count' and 'Pa' really contain numbers (not blanks or text labels).\n",
+       "The prints above show the first few raw values so we can adjust parsing if needed.")
+}
+
+# Linear regression: enrichment strength ~ gene_count
+m <- lm(neglog10p ~ gene_count, data = t2_ok)
+cat("\n=== Regression summary: -log10(p) ~ gene_count ===\n")
+```
+
+    ## 
+    ## === Regression summary: -log10(p) ~ gene_count ===
+
+``` r
+print(summary(m))
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = neglog10p ~ gene_count, data = t2_ok)
+    ## 
+    ## Residuals:
+    ##         1         2         3         4         5         6 
+    ##  0.056607  0.002724 -0.004337  0.035851  0.030486 -0.121330 
+    ## 
+    ## Coefficients:
+    ##              Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) -1.015586   0.079477 -12.778 0.000216 ***
+    ## gene_count   0.013384   0.004189   3.195 0.033050 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 0.071 on 4 degrees of freedom
+    ## Multiple R-squared:  0.7185, Adjusted R-squared:  0.6481 
+    ## F-statistic: 10.21 on 1 and 4 DF,  p-value: 0.03305
+
+``` r
+# Plot: scatter + regression line + CI
+ggplot(t2_ok, aes(gene_count, neglog10p)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    title = "Enrichment strength vs. gene count",
+    x = "Gene count in term",
+    y = expression(-log[10](p))
+  ) +
+  theme_minimal()
+```
+
+    ## `geom_smooth()` using formula = 'y ~ x'
+
+![](POPA_FinalDraft_files/figure-gfm/fig1_multireg-1.png)<!-- -->
 
 # STUDY QUESTION and HYPOTHESIS
 
@@ -141,70 +222,80 @@ available. All code is in the .Rmd using tidyverse/ggplot2.
 
 ## Fill in 1st analysis
 
-    ## ---- fig_table3_clean_ticks, eval=TRUE, message=FALSE, warning=FALSE-------
-    # Requires: readxl, dplyr, ggplot2, readr, stringr, scales
-    library(readxl)
-    library(dplyr)
-    library(ggplot2)
-    library(readr)
-    library(stringr)
-    library(scales)
+``` r
+## ---- fig_table3_clean_ticks, eval=TRUE, message=FALSE, warning=FALSE-------
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(stringr)
+library(scales)
+```
 
-    excel_path <- "/cloud/project/BIOL 3070 Final Project DATA POOL.xlsx"
-    stopifnot(file.exists(excel_path))
+    ## 
+    ## Attaching package: 'scales'
 
-    # Read (unique names); your sheet has an extra note row we drop below
-    t3_raw <- read_excel(excel_path, sheet = "Table 3.0", .name_repair = "unique")
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
 
-    # Column names used in your file
-    chr_col <- "Chromosome"
-    pos_col <- "Position (Mb)"
-    p_col   <- "First and second combined series"
-    snp_col <- "SNP"
+``` r
+excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
+stopifnot(file.exists(excel_path))
 
-    # Drop the note row and parse numerics robustly
-    t3 <- t3_raw %>%
-      filter(!(is.na(.data[[chr_col]]) & is.na(.data[[pos_col]]))) %>%        # remove header/note line
-      transmute(
-        chr_raw = as.character(.data[[chr_col]]),
-        pos_txt = as.character(.data[[pos_col]]),
-        p_txt   = as.character(.data[[p_col]]),
-        snp     = as.character(.data[[snp_col]])
-      ) %>%
-      mutate(
-        chr = case_when(
-          str_to_lower(chr_raw) == "x" ~ 23,
-          str_to_lower(chr_raw) == "y" ~ 24,
-          TRUE ~ parse_number(chr_raw)
-        ),
-        pos_mb     = parse_number(str_replace_all(pos_txt, ",", ".")),
-        p_val      = parse_number(str_replace_all(p_txt,  ",", ".")),
-        neglog10p  = -log10(p_val),
-        highlight  = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
-      ) %>%
-      filter(is.finite(chr), is.finite(pos_mb), is.finite(neglog10p), p_val > 0)
+# Read your SNP sheet
+t3_raw <- read_excel(excel_path, sheet = "Table 3.0", .name_repair = "unique")
+```
 
-    # Faceted plot with CLEAN Mb ticks on the x-axis
-    ggplot(t3, aes(pos_mb, neglog10p)) +
-      geom_point(aes(color = highlight), alpha = 0.85, size = 1.9) +
-      facet_wrap(~ chr, scales = "free_x", ncol = 6) +
-      scale_color_manual(values = c("Other" = "grey40", "rs12948783" = "red")) +
-      scale_x_continuous(
-        breaks = pretty_breaks(n = 3),            # ~3 ticks per facet (adjust n to taste)
-        labels = label_number(accuracy = 1)       # clean numeric labels
-      ) +
-      labs(
-        title = expression(SNP~associations~by~chromosome~(Table~3)),
-        x = "Position (Mb) within chromosome",
-        y = expression(-log[10](p)),
-        color = NULL
-      ) +
-      theme_minimal() +
-      theme(
-        legend.position   = "top",
-        panel.grid.minor.x = element_blank(),
-        axis.text.x        = element_text(size = 8)
-      )
+    ## New names:
+    ## • `...` -> `...12`
+
+``` r
+t3 <- t3_raw %>%
+  filter(!(is.na(.data[["Chromosome"]]) & is.na(.data[["Position_Mb"]]))) %>%
+  transmute(
+    chr_raw = as.character(`Chromosome`),
+    pos_txt = as.character(`Position_Mb`),
+    p1_txt  = as.character(`First series`),
+    p2_txt  = as.character(`Second series`),
+    snp     = as.character(`SNP`)
+  ) %>%
+  mutate(
+    chr = case_when(
+      str_to_lower(chr_raw) == "x" ~ 23,
+      str_to_lower(chr_raw) == "y" ~ 24,
+      TRUE ~ parse_number(chr_raw)
+    ),
+    pos_mb = parse_number(str_replace_all(pos_txt, ",", ".")),
+    p1 = parse_number(str_replace_all(p1_txt, ",", ".")),
+    p2 = parse_number(str_replace_all(p2_txt, ",", ".")),
+    p_val = pmin(p1, p2, na.rm = TRUE),   # combine by smallest p-value
+    neglog10p = -log10(p_val),
+    highlight = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
+  ) %>%
+  filter(is.finite(chr), is.finite(pos_mb), is.finite(neglog10p), p_val > 0)
+
+# Plot by chromosome
+ggplot(t3, aes(pos_mb, neglog10p)) +
+  geom_point(aes(color = highlight), alpha = 0.85, size = 1.9) +
+  facet_wrap(~ chr, scales = "free_x", ncol = 6) +
+  scale_color_manual(values = c("Other" = "grey40", "rs12948783" = "red")) +
+  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
+  labs(
+    title = expression(SNP~associations~by~chromosome~(Table~3)),
+    x = "Position (Mb) within chromosome",
+    y = expression(-log[10](p)),
+    color = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top",
+    panel.grid.minor.x = element_blank(),
+    axis.text.x = element_text(size = 8)
+  )
+```
+
+![](POPA_FinalDraft_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 # DISCUSSION
 
@@ -213,7 +304,7 @@ available. All code is in the .Rmd using tidyverse/ggplot2.
 # REFERENCES
 
 1.  ChatGPT. OpenAI, version Jan 2025. Used as a reference for functions
-    such as plot() and to correct syntax errors. Accessed 2025-10-29.
+    such as plot() and to correct syntax errors. Accessed 2025-10-30.
 2.  Galvan, A., Skorpen, F., Klepstad, P., Knudsen, A. K., Fladvad, T.,
     Falvella, F. S., Pigni, A., Brunelli, C., Caraceni, A., Kaasa, S., &
     Dragani, T. A. (2011). Multiple loci modulate opioid therapy
