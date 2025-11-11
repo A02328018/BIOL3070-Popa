@@ -220,82 +220,97 @@ block—pain_relief ~ dose \* genotype + country + gender—marked
 eval=FALSE as the planned analysis if individual-level data become
 available. All code is in the .Rmd using tidyverse/ggplot2.
 
-## Fill in 1st analysis
+\#ANALYSIS
 
 ``` r
-## ---- fig_table3_clean_ticks, eval=TRUE, message=FALSE, warning=FALSE-------
-library(readxl)
-library(dplyr)
-library(ggplot2)
+# Load necessary packages
 library(readr)
-library(stringr)
-library(scales)
+library(ggplot2)
+
+# Read the dataset
+data <- read_csv("epos_style_rs12948783_simulated_large.csv")
+```
+
+    ## Rows: 1982 Columns: 6
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (4): genotype, carrier, sex, country
+    ## dbl (2): id, norm_pain_relief
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+# Convert categorical variables to factors
+data$genotype <- as.factor(data$genotype)
+data$sex <- as.factor(data$sex)
+data$country <- as.factor(data$country)
+
+# Fit a linear regression model
+model <- lm(norm_pain_relief ~ genotype + sex + country, data = data)
+
+# View the model summary
+summary(model)
 ```
 
     ## 
-    ## Attaching package: 'scales'
-
-    ## The following object is masked from 'package:readr':
+    ## Call:
+    ## lm(formula = norm_pain_relief ~ genotype + sex + country, data = data)
     ## 
-    ##     col_factor
+    ## Residuals:
+    ##     Min      1Q  Median      3Q     Max 
+    ## -36.760  -5.172   0.919   5.818  26.756 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) 76.75153    1.18604  64.712  < 2e-16 ***
+    ## genotypeGA   9.63566    1.17005   8.235 3.22e-16 ***
+    ## genotypeGG  22.19112    1.14459  19.388  < 2e-16 ***
+    ## sexMale      0.00591    0.37752   0.016    0.988    
+    ## countryGB    0.49204    0.50958   0.966    0.334    
+    ## countryIT   -0.14456    0.57632  -0.251    0.802    
+    ## countryNO    0.55745    0.52729   1.057    0.291    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 8.385 on 1975 degrees of freedom
+    ## Multiple R-squared:  0.3792, Adjusted R-squared:  0.3773 
+    ## F-statistic:   201 on 6 and 1975 DF,  p-value: < 2.2e-16
 
 ``` r
-excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
-stopifnot(file.exists(excel_path))
-
-# Read your SNP sheet
-t3_raw <- read_excel(excel_path, sheet = "Table 3.0", .name_repair = "unique")
-```
-
-    ## New names:
-    ## • `...` -> `...12`
-
-``` r
-t3 <- t3_raw %>%
-  filter(!(is.na(.data[["Chromosome"]]) & is.na(.data[["Position_Mb"]]))) %>%
-  transmute(
-    chr_raw = as.character(`Chromosome`),
-    pos_txt = as.character(`Position_Mb`),
-    p1_txt  = as.character(`First series`),
-    p2_txt  = as.character(`Second series`),
-    snp     = as.character(`SNP`)
-  ) %>%
-  mutate(
-    chr = case_when(
-      str_to_lower(chr_raw) == "x" ~ 23,
-      str_to_lower(chr_raw) == "y" ~ 24,
-      TRUE ~ parse_number(chr_raw)
-    ),
-    pos_mb = parse_number(str_replace_all(pos_txt, ",", ".")),
-    p1 = parse_number(str_replace_all(p1_txt, ",", ".")),
-    p2 = parse_number(str_replace_all(p2_txt, ",", ".")),
-    p_val = pmin(p1, p2, na.rm = TRUE),   # combine by smallest p-value
-    neglog10p = -log10(p_val),
-    highlight = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
-  ) %>%
-  filter(is.finite(chr), is.finite(pos_mb), is.finite(neglog10p), p_val > 0)
-
-# Plot by chromosome
-ggplot(t3, aes(pos_mb, neglog10p)) +
-  geom_point(aes(color = highlight), alpha = 0.85, size = 1.9) +
-  facet_wrap(~ chr, scales = "free_x", ncol = 6) +
-  scale_color_manual(values = c("Other" = "grey40", "rs12948783" = "red")) +
-  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
+# Create a regression plot (genotype vs. pain relief)
+ggplot(data, aes(x = genotype, y = norm_pain_relief, fill = genotype)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.15, alpha = 0.4) +
   labs(
-    title = expression(SNP~associations~by~chromosome~(Table~3)),
-    x = "Position (Mb) within chromosome",
-    y = expression(-log[10](p)),
-    color = NULL
+    title = "Effect of Genotype on Normalized Pain Relief",
+    x = "Genotype (rs12948783)",
+    y = "Normalized Pain Relief (%)"
   ) +
-  theme_minimal() +
-  theme(
-    legend.position = "top",
-    panel.grid.minor.x = element_blank(),
-    axis.text.x = element_text(size = 8)
-  )
+  theme_minimal()
 ```
 
 ![](POPA_FinalDraft_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+
+``` r
+data %>%
+  group_by(genotype, carrier) %>%
+  summarize(mean_relief = mean(norm_pain_relief, na.rm = TRUE),
+            se_relief = sd(norm_pain_relief, na.rm = TRUE)/sqrt(n())) %>%
+  ggplot(aes(x = genotype, y = mean_relief, fill = carrier)) +
+  geom_bar(stat = "identity", position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = mean_relief - se_relief, ymax = mean_relief + se_relief),
+                position = position_dodge(0.8), width = 0.2) +
+  labs(title = "Mean Pain Relief by Genotype and Carrier Status",
+       x = "Genotype",
+       y = "Mean ± SE Normalized Pain Relief") +
+  theme_minimal()
+```
+
+    ## `summarise()` has grouped output by 'genotype'. You can override using the
+    ## `.groups` argument.
+
+![](POPA_FinalDraft_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
 
 # DISCUSSION
 
@@ -304,7 +319,7 @@ ggplot(t3, aes(pos_mb, neglog10p)) +
 # REFERENCES
 
 1.  ChatGPT. OpenAI, version Jan 2025. Used as a reference for functions
-    such as plot() and to correct syntax errors. Accessed 2025-10-30.
+    such as plot() and to correct syntax errors. Accessed 2025-11-11.
 2.  Galvan, A., Skorpen, F., Klepstad, P., Knudsen, A. K., Fladvad, T.,
     Falvella, F. S., Pigni, A., Brunelli, C., Caraceni, A., Kaasa, S., &
     Dragani, T. A. (2011). Multiple loci modulate opioid therapy

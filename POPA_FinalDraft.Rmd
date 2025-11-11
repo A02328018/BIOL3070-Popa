@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Opioid pain relief isn’t the same for every cancer patient, and genetics likely explains part of that. Using summary EPOS data, I built two figures: (1) a simple regression showing how enrichment strength (−log10 p) changes with the number of genes per term (Table 2), and (2) a chromosome-wise view of SNP associations that highlights rs12948783 near RHBDF2 (Table 3). The regression suggests larger gene sets tend to show stronger enrichment, and the SNP plot shows where top signals sit in the genome. Because I only have summary tables (not patient-level rows), I also include a draft multiple-regression code chunk (dose × genotype with covariates) for when/if row-level data are available. Overall, these figures connect the genetic signal to EPOS findings and set up the next step toward individualized pain management.
 
 # BACKGROUND
-Pain control on opioids varies widely, even at similar doses. Clinical factors explain some of it, but prior EPOS work points to a genetic component, including a variant near RHBDF2 (rs12948783). I don’t have patient-level outcomes or doses; I do have the study’s Table 2 (term enrichment) and Table 3 (top SNPs). So I’m first visualizing what’s available to ground the story: do bigger gene sets show stronger enrichment, and where does rs12948783 fall among the top SNP signals? This keeps the genetics focus clear while I stage the planned patient-level model for later.
+Pain control on opioids varies widely, even at similar doses. While clinical factors explain some of this variability, prior EPOS work points to a genetic contribution, including a variant near RHBDF2 (rs12948783). Using the available summary tables rather than patient-level outcomes, I first visualized the data to ground the story: from Table 2, I assessed whether larger gene sets show stronger enrichment, and from Table 3, I checked where rs12948783 ranks among the top SNP signals. This approach keeps the focus on genetics while preparing for a later patient-level model incorporating genotype, sex, country, and pain relief outcomes.
 ```{r fig1_multireg, eval=TRUE}
 # your plotting / model code here
 
@@ -100,64 +100,51 @@ I expect a positive relationship in the summary enrichment data: terms with more
 # METHODS
 I imported the EPOS Excel workbook and worked directly from the summary tables available. From Table 2, I ran a simple linear regression of −log10(p) on gene count and plotted a scatter with an OLS line and 95% CI. From Table 3, I plotted −log10(p) versus position (Mb) within each chromosome and highlighted rs12948783; I cleaned headers, dropped the note row, and used sparse x-axis ticks so labels are readable. Because I don’t have patient-level rows (pain relief, dose, genotype, country, gender), I also included a draft multiple-regression code block—pain_relief ~ dose * genotype + country + gender—marked eval=FALSE as the planned analysis if individual-level data become available. All code is in the .Rmd using tidyverse/ggplot2.
 
-## Fill in 1st analysis
+#ANALYSIS
 ```{r}
-## ---- fig_table3_clean_ticks, eval=TRUE, message=FALSE, warning=FALSE-------
-library(readxl)
-library(dplyr)
-library(ggplot2)
+# Load necessary packages
 library(readr)
-library(stringr)
-library(scales)
+library(ggplot2)
 
-excel_path <- "BIOL 3070 Final Project DATA POOL.xlsx"
-stopifnot(file.exists(excel_path))
+# Read the dataset
+data <- read_csv("epos_style_rs12948783_simulated_large.csv")
 
-# Read your SNP sheet
-t3_raw <- read_excel(excel_path, sheet = "Table 3.0", .name_repair = "unique")
+# Convert categorical variables to factors
+data$genotype <- as.factor(data$genotype)
+data$sex <- as.factor(data$sex)
+data$country <- as.factor(data$country)
 
-t3 <- t3_raw %>%
-  filter(!(is.na(.data[["Chromosome"]]) & is.na(.data[["Position_Mb"]]))) %>%
-  transmute(
-    chr_raw = as.character(`Chromosome`),
-    pos_txt = as.character(`Position_Mb`),
-    p1_txt  = as.character(`First series`),
-    p2_txt  = as.character(`Second series`),
-    snp     = as.character(`SNP`)
-  ) %>%
-  mutate(
-    chr = case_when(
-      str_to_lower(chr_raw) == "x" ~ 23,
-      str_to_lower(chr_raw) == "y" ~ 24,
-      TRUE ~ parse_number(chr_raw)
-    ),
-    pos_mb = parse_number(str_replace_all(pos_txt, ",", ".")),
-    p1 = parse_number(str_replace_all(p1_txt, ",", ".")),
-    p2 = parse_number(str_replace_all(p2_txt, ",", ".")),
-    p_val = pmin(p1, p2, na.rm = TRUE),   # combine by smallest p-value
-    neglog10p = -log10(p_val),
-    highlight = if_else(str_detect(str_to_lower(snp), "rs12948783"), "rs12948783", "Other")
-  ) %>%
-  filter(is.finite(chr), is.finite(pos_mb), is.finite(neglog10p), p_val > 0)
+# Fit a linear regression model
+model <- lm(norm_pain_relief ~ genotype + sex + country, data = data)
 
-# Plot by chromosome
-ggplot(t3, aes(pos_mb, neglog10p)) +
-  geom_point(aes(color = highlight), alpha = 0.85, size = 1.9) +
-  facet_wrap(~ chr, scales = "free_x", ncol = 6) +
-  scale_color_manual(values = c("Other" = "grey40", "rs12948783" = "red")) +
-  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
+# View the model summary
+summary(model)
+
+# Create a regression plot (genotype vs. pain relief)
+ggplot(data, aes(x = genotype, y = norm_pain_relief, fill = genotype)) +
+  geom_boxplot(alpha = 0.7) +
+  geom_jitter(width = 0.15, alpha = 0.4) +
   labs(
-    title = expression(SNP~associations~by~chromosome~(Table~3)),
-    x = "Position (Mb) within chromosome",
-    y = expression(-log[10](p)),
-    color = NULL
+    title = "Effect of Genotype on Normalized Pain Relief",
+    x = "Genotype (rs12948783)",
+    y = "Normalized Pain Relief (%)"
   ) +
-  theme_minimal() +
-  theme(
-    legend.position = "top",
-    panel.grid.minor.x = element_blank(),
-    axis.text.x = element_text(size = 8)
-  )
+  theme_minimal()
+
+data %>%
+  group_by(genotype, carrier) %>%
+  summarize(mean_relief = mean(norm_pain_relief, na.rm = TRUE),
+            se_relief = sd(norm_pain_relief, na.rm = TRUE)/sqrt(n())) %>%
+  ggplot(aes(x = genotype, y = mean_relief, fill = carrier)) +
+  geom_bar(stat = "identity", position = position_dodge(0.8)) +
+  geom_errorbar(aes(ymin = mean_relief - se_relief, ymax = mean_relief + se_relief),
+                position = position_dodge(0.8), width = 0.2) +
+  labs(title = "Mean Pain Relief by Genotype and Carrier Status",
+       x = "Genotype",
+       y = "Mean ± SE Normalized Pain Relief") +
+  theme_minimal()
+
+
 ```
 
 
