@@ -211,7 +211,7 @@ ggplot(t2_ok, aes(gene_count, neglog10p)) +
 
     ## `geom_smooth()` using formula = 'y ~ x'
 
-![](POPA_FinalDraft_files/figure-gfm/fig1_multireg-1.png)<!-- -->
+![](Final-Project-Popa_files/figure-gfm/fig1_multireg-1.png)<!-- -->
 
 # STUDY QUESTION and HYPOTHESIS
 
@@ -406,7 +406,7 @@ ggplot(data, aes(x = genotype, y = norm_pain_relief, fill = genotype)) +
   theme_minimal()
 ```
 
-![](POPA_FinalDraft_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+![](Final-Project-Popa_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
 
 ``` r
 data %>%
@@ -426,7 +426,7 @@ data %>%
     ## `summarise()` has grouped output by 'genotype'. You can override using the
     ## `.groups` argument.
 
-![](POPA_FinalDraft_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
+![](Final-Project-Popa_files/figure-gfm/unnamed-chunk-1-2.png)<!-- -->
 
 # DISCUSSION
 
