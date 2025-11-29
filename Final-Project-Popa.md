@@ -1,7 +1,7 @@
 Opioid Therapy Response in European Cancer Patients
 ================
 Michael Popa
-2025-11-22
+2025-11-29
 
 - [ABSTRACT](#abstract)
 - [BACKGROUND](#background)
@@ -18,49 +18,40 @@ Michael Popa
 # ABSTRACT
 
 Opioid pain relief varies considerably among cancer patients, and
-genetic factors likely contribute to this variation. Using summary EPOS
-data, we generated two visual analyses: (1) a simple regression testing
-how enrichment strength (−log₁₀ p) relates to the number of genes per
-term (Table 2), and (2) a chromosome-level visualization of SNP
-associations highlighting rs12948783 near RHBDF2 (Table 3). The
-regression indicated that larger gene sets tend to show stronger
-enrichment, and the SNP plot illustrated where the most significant
-genomic signals were located. Because only summary tables were available
-rather than patient-level data, we also included a draft
-multiple-regression model (dose × genotype with covariates) to indicate
-how individual-level analyses would proceed if those data become
-available. Overall, these results contextualize the genetic patterns
-observed in EPOS and help motivate future work toward individualized
-opioid pain management.
+genetic factors likely contribute to this variation. Using summary data
+from the European Pharmacogenetic Opioid Study (EPOS), we generated two
+visual analyses: (1) a simple regression testing how enrichment strength
+(−log₁₀ p) relates to the number of genes per term (Table 2), and (2) a
+chromosome-level visualization of SNP associations highlighting
+rs12948783 near RHBDF2 (Table 3). The regression indicated that larger
+gene sets tend to show stronger enrichment, and the SNP plot illustrated
+where the most significant genomic signals were located. Because only
+summary tables were available rather than patient-level data, we also
+included a draft multiple-regression model (dose × genotype with
+covariates) to indicate how individual-level analyses would proceed if
+those data become available. Overall, these results contextualize the
+genetic patterns observed in EPOS and help motivate future work toward
+individualized opioid pain management.
 
 # BACKGROUND
 
-Opioid-based pain control shows remarkable variability across patients
-even when doses are similar, and while clinical factors explain portions
-of this, prior EPOS analyses suggest that genetics also plays an
-important role. One variant of interest remains rs12948783 near RHBDF2.
-Working from the summary tables available rather than row-level patient
-outcomes, we focused first on visualizing the data to establish a
-foundation for interpreting these genetic signals. Using Table 2, we
-assessed whether larger gene sets were associated with stronger
-enrichment scores, and from Table 3, we examined where rs12948783 ranked
-among the strongest SNP associations across the genome. This allowed us
-to maintain the focus on genetic contributors while preparing for future
-analyses incorporating individual data such as genotype, sex, country,
-and pain relief outcomes.
-
-We imported the EPOS Excel workbook and worked directly with the summary
-tables. From Table 2, we ran a simple linear regression of −log₁₀(p) on
-gene count and plotted the results with an OLS line and 95% CI. From
-Table 3, we plotted −log₁₀(p) against genomic position (Mb) within each
-chromosome and highlighted rs12948783; this required cleaning column
-headers, removing the note row, and adjusting axis spacing for
-legibility. Because patient-level variables (pain relief, dose,
-genotype, country, gender) were not available, we included a draft
-multiple-regression model as a template—pain_relief ~ dose \* genotype +
-country + gender—to illustrate the next analytical step should
-individual-level EPOS data be provided. All code associated with these
-analyses was written in R using tidyverse and ggplot2 packages.
+Effective pain management is critical in cancer care, as uncontrolled
+pain can significantly reduce quality of life, impede treatment
+adherence, and contribute to psychological distress. Opioid-based
+analgesics remain a cornerstone of moderate to severe cancer pain
+management, but patients often experience markedly different levels of
+pain relief despite receiving similar doses. Understanding the sources
+of this variability is essential for improving patient outcomes and
+tailoring therapy to individual needs. While clinical factors such as
+age, comorbidities, and concurrent medications account for some of the
+observed differences in opioid response, genetic variation has emerged
+as a key contributor. Prior analyses from the European Pharmacogenetic
+Opioid Study (EPOS) suggest that specific genetic variants may influence
+how patients metabolize or respond to opioids, with one variant of
+particular interest being rs12948783 near RHBDF2. Characterizing these
+genetic influences is an important step toward developing personalized
+pain management strategies that optimize efficacy while minimizing
+adverse effects.
 
 ``` r
 # your plotting / model code here
@@ -246,15 +237,22 @@ higher enrichment values if my assumption is right.
 
 # METHODS
 
-All work used the EPOS summary workbook provided to us; no patient-level
-rows were available for this project. We imported the Excel workbook
-into R and worked directly from the summary tables (Table 2 and Table
-3). For Table 2 (gene set enrichment summary) we cleaned column headers,
-removed non-data rows (notes and footers), converted gene counts and
-p-values to numeric types, and computed −log₁₀(p) for each term. For
-Table 3 (SNP association summary) we similarly cleaned headers,
-converted chromosome and base-pair positions to numeric, and calculated
-−log₁₀(p) for plotting.
+All analyses were performed using the EPOS summary workbook, as no
+patient-level data were available. We imported the Excel workbook into R
+and worked directly from the summary tables (Tables 2 and 3). For Table
+2 (gene set enrichment), we cleaned column headers, removed non-data
+rows, converted gene counts and p-values to numeric types, and computed
+−log₁₀(p) for each term, which was then used in a simple linear
+regression of −log₁₀(p) on gene count and visualized with an OLS line
+and 95% confidence interval. For Table 3 (SNP associations), we
+similarly cleaned headers, converted chromosome and base-pair positions
+to numeric, calculated −log₁₀(p) for plotting, and highlighted
+rs12948783 within a chromosome-level visualization. Because
+patient-level variables such as pain relief, dose, genotype, country,
+and gender were not available, we also drafted a multiple-regression
+model (pain_relief ~ dose \* genotype + country + gender) as a template
+for future analyses. All code was written in R using tidyverse and
+ggplot2 packages.
 
 For the gene-count analysis we fitted a simple ordinary least-squares
 linear regression with −log₁₀(p) as the dependent variable and
@@ -502,7 +500,7 @@ settings.
 
 1.  ChatGPT. OpenAI, version Jan 2025. Used as a reference for functions
     such as plot(), to correct syntax errors, and to polish writing.
-    Accessed 2025-11-22.
+    Accessed 2025-11-29.
 2.  Galvan, A., Skorpen, F., Klepstad, P., Knudsen, A. K., Fladvad, T.,
     Falvella, F. S., Pigni, A., Brunelli, C., Caraceni, A., Kaasa, S., &
     Dragani, T. A. (2011). Multiple loci modulate opioid therapy
